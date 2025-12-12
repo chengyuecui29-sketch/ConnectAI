@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ConnectAI</title>
+
+<style>
+    /* ===== KEEP ALL YOUR ORIGINAL CSS ===== */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+    .container { background: white; padding: 0; width: 100%; max-width: 600px; border-radius: 20px; box-shadow: 0px 20px 60px rgba(0,0,0,0.3); animation: slideIn 0.5s ease-out; overflow: visible; }
+    .header-section { padding: 40px 40px 20px 40px; text-align: center; }
+    @keyframes slideIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    h1 { text-align: center; margin-bottom: 10px; font-size: 36px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .subtitle { text-align: center; color: #999; font-size: 14px; margin-bottom: 30px; font-weight: 300; }
+    .input-wrapper { position: relative; margin-bottom: 5px; }
+    input { width: 100%; padding: 20px 24px; border-radius: 12px; border: 2px solid #e8e8e8; font-size: 18px; transition: all 0.3s ease; background: #f8f9fa; }
+    input:hover { border-color: #667eea; background: white; box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1); }
+    input:focus { outline: none; border-color: #667eea; background: white; box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.2); }
+    .input-hint { font-size: 12px; color: #ccc; margin-top: 8px; transition: all 0.3s ease; opacity: 0; height: 0; overflow: hidden; }
+    input:hover ~ .input-hint { opacity: 1; height: auto; }
+    button { width: 100%; padding: 15px 20px; margin-top: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; color: white; font-size: 16px; font-weight: 600; border-radius: 12px; cursor: pointer; transition: all 0.3s ease; position: relative; overflow: hidden; }
+    #searchBtn { padding: 18px 20px; font-size: 18px; }
+    button::before { content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent); transition: left 0.5s ease; }
+    button:hover::before { left: 100%; }
+    button:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4); }
+    button:active { transform: translateY(0px); }
+    .result-box { margin-top: 30px; padding: 25px; background: linear-gradient(135deg, #f5f7fa 0%, #f0f2f7 100%); border-radius: 16px; min-height: 80px; display: none; border-left: 5px solid #667eea; animation: fadeIn 0.4s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .result-text { color: #555; font-size: 14px; font-weight: 500; margin-bottom: 15px; letter-spacing: 0.5px; }
+    
+    /* ----------------------------------------------------- */
+    /* MODIFIED .ai-link STYLES FOR SMOOTHER HOVER/CLICK */
+    /* ----------------------------------------------------- */
+    .ai-link { 
+        display: inline-block; 
+        font-weight: 700; 
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+        -webkit-background-clip: text; 
+        -webkit-text-fill-color: transparent; 
+        background-clip: text; 
+        text-decoration: none; 
+        padding: 10px 0; 
+        border-bottom: 2px solid transparent; 
+        transition: all 0.2s ease-out; /* Smoother transition */
+        position: relative; 
+        font-size: 16px; 
+    }
+    .ai-link::after { 
+        content: '→'; 
+        opacity: 0; 
+        margin-left: -10px; 
+        transition: all 0.2s ease-out; /* Smoother arrow transition */
+    }
+    
+    .ai-link:hover { 
+        border-bottom: 2px solid #667eea; 
+    }
+    
+    .ai-link:hover::after { 
+        opacity: 1; 
+        margin-left: 5px; 
+    }
+
+    /* REMOVED: .ai-link:hover::before (the blue tooltip block) and @keyframes tooltipPop */
+    /* ADDED: Smoother click feedback */
+    .ai-link:active {
+        opacity: 0.8;
+        transform: translateY(1px);
+        transition: opacity 0.1s ease-out, transform 0.1s ease-out;
+    }
+    /* ----------------------------------------------------- */
+    /* END MODIFIED .ai-link STYLES */
+    /* ----------------------------------------------------- */
+
+    .error-text { color: #e74c3c; font-weight: 600; }
+    .loading-spinner { display: inline-block; width: 16px; height: 16px; border: 3px solid rgba(102, 126, 234, 0.3); border-radius: 50%; border-top-color: #667eea; animation: spin 0.8s linear infinite; margin-right: 8px; vertical-align: middle; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .tab-navigation { display: flex; gap: 10px; margin-bottom: 30px; border-bottom: 2px solid #e8e8e8; padding-bottom: 0; }
+    .tab-navigation-wrapper { display: flex; gap: 10px; background: #f8f9fa; padding: 0; border-bottom: 2px solid #e8e8e8; }
+    .tab-btn { padding: 12px 20px; background: none; border: none; border-bottom: 3px solid transparent; color: #999; font-size: 14px; font-weight: 600; cursor: pointer; transition: color 220ms ease, border-color 220ms ease, transform 120ms ease; width: auto; margin: 0; }
+    .tab-btn:hover { color: #667eea; transform: none; box-shadow: none; }
+    .tab-btn.active { color: #667eea; border-bottom-color: #667eea; }
+    .tab-content { display: none; animation: fadeIn 0.3s ease; padding: 40px; transition: opacity 260ms ease; }
+    .tab-content.active { display: block; }
+    #home { padding: 40px; }
+    .about-content { padding: 20px 0; }
+    .about-section { margin-bottom: 25px; }
+    .about-title { font-size: 16px; font-weight: 700; color: #667eea; margin-bottom: 10px; }
+    .about-text { font-size: 14px; color: #666; line-height: 1.6; }
+    .about-credit { background: linear-gradient(135deg, #f5f7fa 0%, #f0f2f7 100%); padding: 20px; border-radius: 12px; border-left: 4px solid #667eea; margin-top: 25px; }
+    .credit-name { font-size: 16px; font-weight: 700; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .credit-role { font-size: 13px; color: #999; margin-top: 5px; }
+    /* AI List styles */
+    .ai-list-container { display:flex; flex-direction:column; gap:16px; }
+    .ai-list-scroll { padding: 12px; background: #f8fafc; border-radius: 12px; border: 1px solid #eef2ff; scroll-behavior: smooth; }
+    .ai-card { display:flex; flex-direction:column; gap:8px; background: white; padding: 14px; border-radius: 12px; border: 1px solid #eef2ff; box-shadow: 0 6px 18px rgba(15,23,42,0.03); transition: transform 260ms cubic-bezier(.2,.9,.2,1), opacity 260ms ease; will-change: transform, opacity; }
+    .ai-card-row { display:flex; justify-content:space-between; align-items:center; gap:12px; }
+    .ai-card-title { font-weight:700; color:#0f172a; font-size:15px; }
+    .ai-card-desc { color:#4b5563; font-size:13px; }
+    .ai-card-keywords { margin-top:8px; display:flex; flex-wrap:wrap; gap:8px; }
+    .ai-key { background:#eef2ff; color:#0f172a; padding:6px 10px; border-radius:999px; font-size:12px; }
+    .pagination { display:flex; gap:8px; justify-content:center; align-items:center; margin-top:12px; }
+    .page-btn { padding:8px 12px; background:white; border:1px solid #e6eefc; border-radius:10px; cursor:pointer; font-weight:700; color:#334155; box-shadow: 0 6px 12px rgba(15,23,42,0.04); transition: transform 160ms ease, background 180ms ease, color 180ms ease, box-shadow 180ms ease; }
+    .page-btn:hover { transform: translateY(-3px); box-shadow: 0 10px 24px rgba(15,23,42,0.08); }
+    .page-btn:active { transform: translateY(-1px); }
+    .page-btn.active { background: linear-gradient(135deg,#667eea 0%,#764ba2 100%); color:white; border-color:transparent; box-shadow: 0 10px 30px rgba(102,126,234,0.18); }
+    .page-info { color:#6b7280; font-size:13px; }
+
+    /* subtle result transition */
+    .ai-list-scroll .ai-card { opacity: 0; transform: translateY(8px); }
+    .ai-list-scroll .ai-card.entered { opacity: 1; transform: translateY(0); }
+</style>
+</head>
+
+<body>
+<div class="container">
+    <div class="tab-navigation-wrapper">
+        <button class="tab-btn active" data-tab="home">Home</button>
+        <button class="tab-btn" data-tab="ai-list">AI List</button>
+        <button class="tab-btn" data-tab="about">About</button>
+    </div>
+
+    <div class="header-section">
+        <h1>✨ ConnectAI </h1>
+        <p class="subtitle">The perfect tool to find the perfect AI</p>
+    </div>
+
+    <!-- Home Tab -->
+    <div id="home" class="tab-content active">
+        <div class="input-wrapper">
+            <input id="searchInput" type="text" placeholder="Describe what you need help with...">
+            <span class="input-hint">💡 Be specific for better results!</span>
+        </div>
+
+        <button id="searchBtn">Find the Best AI</button>
+
+        <div id="resultBox" class="result-box"></div>
+    </div>
+
+<!-- About Tab -->
+    <div id="about" class="tab-content">
+        <div class="about-content">
+            <div class="about-section">
+                <div class="about-title">About AI Connector</div>
+                <div class="about-text">
+                    AI Connector is your gateway to finding the perfect AI tool for any task. Whether you need help with writing, coding, design, or research, we've got you covered.
+                </div>
+            </div>
+
+            <div class="about-section">
+                <div class="about-title">Features</div>
+                <div class="about-text">
+                    🎯 Smart matching algorithm to find the best AI for your needs<br>
+                    🚀 Fast and intuitive interface<br>
+                    🔒 Secure and private<br>
+                    💵 Completely Free<br>
+                    🤖 Smart Algorithm to find the perfect AI<br>
+                    🌟 Curated selection of top AI tools
+                </div>
+            </div>
+
+            <div class="about-credit">
+                <div class="about-title">Created by</div>
+                <div class="credit-name">Chengyue Cui '29</div>
+                <div class="credit-role">Software Engineer, Bay Area</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI List Tab -->
+    <div id="ai-list" class="tab-content">
+        <div class="about-title">📚 AI Directory</div>
+        <div style="margin-top:10px;color:#555;font-size:14px">Browse the curated list of AI tools. Use pagination or scroll to explore. Click "Visit" to open each tool.</div>
+
+        <div style="margin-top:18px;display:flex;gap:8px;align-items:center">
+            <input id="aiListSearch" placeholder="Search AI by name, keyword, or description" style="flex:1;padding:10px;border-radius:10px;border:1px solid #e6eefc;font-size:13px" />
+            <label for="pageSizeSelect" style="font-size:13px;color:#6b7280">Per page:</label>
+            <select id="pageSizeSelect" style="padding:8px;border-radius:8px;border:1px solid #e6eefc">
+                <option value="5" selected>5</option>
+                <option value="10">10</option>
+                <option value="20">20</option>
+            </select>
+            <label style="display:flex;align-items:center;gap:8px;margin-left:8px;font-size:13px;color:#6b7280">
+                <input type="checkbox" id="showKeywordsToggle" /> Show keywords
+            </label>
+            <div id="aiListCount" style="font-size:13px;color:#6b7280;margin-left:6px"></div>
+        </div>
+
+        <div class="ai-list-container" style="margin-top:12px">
+            <div id="aiListScroll" class="ai-list-scroll"></div>
+            <div id="paginationContainer" class="pagination"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ===== TAB NAVIGATION =====
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    tabBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const tabName = btn.getAttribute('data-tab');
+            tabBtns.forEach(b => b.classList.remove('active'));
+            tabContents.forEach(t => t.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+        });
+    });
+
+    // ===== SEARCH FUNCTIONALITY =====
+    const searchBtn = document.getElementById("searchBtn");
+    const searchInput = document.getElementById("searchInput");
+    const resultBox = document.getElementById("resultBox");
+
+    searchInput.addEventListener("keypress", (e) => { if (e.key === "Enter") searchBtn.click(); });
+
+    // Local AI database (100 entries) with keywords and links
+    const AI_DB = [
+        { name: 'ChatGPT', keywords: ['chat','conversational','assistant','general','chatgpt'], desc: 'General conversational AI for many tasks', link: 'https://chat.openai.com' },
+        { name: 'OpenAI (GPT-4)', keywords: ['gpt4','openai','large model','assistant','coding','general'], desc: 'OpenAI GPT models for text generation and more', link: 'https://openai.com' },
+        { name: 'Google Gemini', keywords: ['gemini','google','chat','research','general'], desc: "Google's Gemini family for high-quality conversational AI", link: 'https://ai.google' },
+        { name: 'Anthropic Claude', keywords: ['claude','anthropic','assistant','safety','chat'], desc: 'Claude - an assistant focused on safety and helpfulness', link: 'https://www.anthropic.com' },
+        { name: 'Bard', keywords: ['bard','google','chat','assistant','research'], desc: 'Google Bard for conversational search-like tasks', link: 'https://bard.google.com' },
+        { name: 'Midjourney', keywords: ['midjourney','image','text-to-image','art','creative','images'], desc: 'AI for creative image generation', link: 'https://www.midjourney.com' },
+        { name: 'DALL·E', keywords: ['dalle','image','text-to-image','openai','images'], desc: 'OpenAI image generation model', link: 'https://openai.com/dall-e-2' },
+        { name: 'Stable Diffusion', keywords: ['stable diffusion','stability','image','text-to-image','sd'], desc: 'Open-source image generation models', link: 'https://stability.ai' },
+        { name: 'Jasper', keywords: ['jasper','marketing','copy','writing','ads'], desc: 'AI writing assistant for marketing and copy', link: 'https://www.jasper.ai' },
+        { name: 'Copy.ai', keywords: ['copy.ai','copy','writing','ads','content'], desc: 'AI copywriting tools', link: 'https://www.copy.ai' },
+        { name: 'Writesonic', keywords: ['writesonic','writing','copy','content','chatsonic'], desc: 'AI writing and content generation platform', link: 'https://writesonic.com' },
+        { name: 'Perplexity', keywords: ['perplexity','research','qa','search','summarize'], desc: 'AI-powered answer and research engine', link: 'https://www.perplexity.ai' },
+        { name: 'Lumen5', keywords: ['lumen5','video','marketing','social','videos'], desc: 'AI video creation for marketing', link: 'https://lumen5.com' },
+        { name: 'Synthesia', keywords: ['synthesia','video','avatar','text-to-video','ai video'], desc: 'Create AI-generated video with avatars', link: 'https://www.synthesia.io' },
+        { name: 'Descript', keywords: ['descript','audio','video','editing','transcript'], desc: 'Multimedia editor with AI tools (transcript, overdub)', link: 'https://www.descript.com' },
+        { name: 'ElevenLabs', keywords: ['elevenlabs','voice','tts','audio','speech'], desc: 'High-quality text-to-speech and voice cloning', link: 'https://elevenlabs.io' },
+        { name: 'Murf', keywords: ['murf','voice','tts','voiceover','audio'], desc: 'Text to speech for voiceovers and presentations', link: 'https://murf.ai' },
+        { name: 'Replika', keywords: ['replika','companion','chatbot','friend','therapy'], desc: 'AI companion and conversational agent', link: 'https://replika.ai' },
+        { name: 'Runway', keywords: ['runway','video','editing','gen-2','creative'], desc: 'Generative video and creative tools', link: 'https://runwayml.com' },
+        { name: 'Scribe', keywords: ['scribe','how-to','documentation','guide','screenshots'], desc: 'Automatically create how-to guides from workflows', link: 'https://scribehow.com' },
+        { name: 'Notion AI', keywords: ['notion','notes','writing','productivity','docs'], desc: 'AI features inside Notion for notes and docs', link: 'https://www.notion.so/product/ai' },
+        { name: 'Grammarly', keywords: ['grammar','writing','edit','proofread','tone'], desc: 'Writing assistant for grammar, clarity, and tone', link: 'https://www.grammarly.com' },
+        { name: 'Hemingway', keywords: ['hemingway','clarity','writing','readability','edit'], desc: 'Tool for clearer, more concise writing', link: 'http://www.hemingwayapp.com' },
+        { name: 'GitHub Copilot', keywords: ['copilot','code','github','programming','autocompletion'], desc: 'AI pair programmer for code suggestions', link: 'https://github.com/features/copilot' },
+        { name: 'Amazon Bedrock', keywords: ['bedrock','aws','inference','models','deploy'], desc: 'Managed model deployment and foundation models on AWS', link: 'https://aws.amazon.com/bedrock' },
+        { name: 'Cohere', keywords: ['cohere','nlp','embedding','models','language'], desc: 'NLP models for embeddings, generation, and classification', link: 'https://cohere.ai' },
+        { name: 'Character.ai', keywords: ['character.ai','characters','chatbot','roleplay','bot'], desc: 'Create and chat with AI characters', link: 'https://beta.character.ai' },
+        { name: 'Kaiber', keywords: ['kaiber','video','music','generative video','creative'], desc: 'Generative video from prompts and music', link: 'https://www.kaiber.ai' },
+        { name: 'Otter.ai', keywords: ['otter','transcribe','meeting','notes','audio'], desc: 'Automatic meeting transcription and notes', link: 'https://otter.ai' },
+        { name: 'Voiceflow', keywords: ['voiceflow','voice','conversational','flow','dialogue'], desc: 'Design and deploy voice and chat experiences', link: 'https://www.voiceflow.com' },
+        { name: 'Pictory', keywords: ['pictory','video','shorts','text-to-video','summarize'], desc: 'Create short videos from long-form content', link: 'https://pictory.ai' },
+        { name: 'ClipDrop', keywords: ['clipdrop','image','editing','remove background','snap'], desc: 'Image capture and editing tools powered by AI', link: 'https://clipdrop.co' },
+        { name: 'Lalal.ai', keywords: ['lalal','audio','stem','separate','music'], desc: 'AI vocal and instrumental separation for audio', link: 'https://www.lalal.ai' },
+        { name: 'DeepL', keywords: ['deepl','translate','translation','language','translate'], desc: 'High-quality machine translation', link: 'https://www.deepl.com' },
+        { name: 'Framer AI', keywords: ['framer','design','website','prototype','ui'], desc: 'AI-assisted web & UI design inside Framer', link: 'https://www.framer.com' },
+        { name: 'Copysmith', keywords: ['copysmith','ecommerce','ads','copy','product'], desc: 'AI for e-commerce copy and product descriptions', link: 'https://copysmith.ai' },
+        { name: 'Simplified', keywords: ['simplified','design','social','content','marketing'], desc: 'All-in-one creative platform with AI', link: 'https://simplified.com' },
+        { name: 'Glasp', keywords: ['glasp','highlights','research','read','notes'], desc: 'Social web highlighter for research with AI features', link: 'https://glasp.co' },
+        { name: 'Explainpaper', keywords: ['explainpaper','paper','research','summarize','academic'], desc: 'Explain academic papers in simple language', link: 'https://explainpaper.com' },
+        { name: 'Typewise', keywords: ['typewise','keyboard','typing','mobile','autocorrect'], desc: 'AI keyboard for better typing on mobile', link: 'https://typewise.ai' },
+        { name: 'Magenta', keywords: ['magenta','music','creative','tensorflow','music ai'], desc: 'Music generation research tools by Google', link: 'https://magenta.tensorflow.org' },
+        { name: 'AI Dungeon', keywords: ['aidungeon','game','story','interactive','rpg'], desc: 'Interactive AI storytelling and games', link: 'https://play.aidungeon.io' },
+        { name: 'Hugging Face', keywords: ['huggingface','models','transformers','community','model hub'], desc: 'Model hub and tools for many ML models', link: 'https://huggingface.co' },
+        { name: 'EleutherAI', keywords: ['eleutherai','open models','community','research','gpt'], desc: 'Community-driven open source large language models', link: 'https://www.eleuther.ai' },
+        { name: 'InferKit', keywords: ['inferkit','text','generation','stories','creative'], desc: 'Flexible text generation API', link: 'https://inferkit.com' },
+        { name: 'Amper Music', keywords: ['amper','music','compose','audio','soundtrack'], desc: 'AI music composition and production', link: 'https://www.ampermusic.com' },
+        { name: 'Adobe Firefly', keywords: ['adobe firefly','image','design','text-to-image','creative'], desc: 'Adobe creative generative models', link: 'https://www.adobe.com/sensei.html' },
+        { name: 'Canva (Magic Write)', keywords: ['canva','design','magic write','templates','social'], desc: 'Design tools with AI features', link: 'https://www.canva.com' },
+        { name: 'PhotoRoom', keywords: ['photroom','photo','remove background','image','editing'], desc: 'Quick product image editing and background removal', link: 'https://www.photoroom.com' },
+        { name: 'Fireflies.ai', keywords: ['fireflies','transcribe','meeting','notes','ai assistant'], desc: 'Meeting transcription and notes assistant', link: 'https://www.fireflies.ai' },
+        { name: 'Krisp', keywords: ['krisp','noise','audio','call','filter'], desc: 'AI noise cancellation for calls and recordings', link: 'https://krisp.ai' },
+        { name: 'Tabnine', keywords: ['tabnine','code','autocomplete','programming','ai'], desc: 'AI code completion for many editors', link: 'https://www.tabnine.com' },
+        { name: 'Codeium', keywords: ['codeium','code','autocomplete','ai dev','programming'], desc: 'AI coding assistant and autocompletion', link: 'https://codeium.com' },
+        { name: 'Replit Ghostwriter', keywords: ['replit','ghostwriter','code','ide','assistant'], desc: 'AI coding helper integrated into Replit', link: 'https://replit.com' },
+        { name: 'Codota', keywords: ['codota','code','java','autocomplete','ai'], desc: 'AI code suggestions and search', link: 'https://www.codota.com' },
+        { name: 'Artbreeder', keywords: ['artbreeder','image','mix','creative','faces'], desc: 'Blend images and generate portraits', link: 'https://www.artbreeder.com' },
+        { name: 'ThisPersonDoesNotExist', keywords: ['fake face','gan','image','generated','faces'], desc: 'Generates realistic human faces using GANs', link: 'https://thispersondoesnotexist.com' },
+        { name: 'Generated Photos', keywords: ['generated photos','faces','stock','ai images'], desc: 'AI-generated stock photos and faces', link: 'https://generated.photos' },
+        { name: 'Remove.bg', keywords: ['remove.bg','background','image','remove','cutout'], desc: 'Background removal powered by AI', link: 'https://www.remove.bg' },
+        { name: 'Photopea', keywords: ['photopea','editor','photoshop','image','edit'], desc: 'Online photo editor with many features', link: 'https://www.photopea.com' },
+        { name: 'Boomy', keywords: ['boomy','music','compose','ai music','songs'], desc: 'Create songs and music with AI', link: 'https://boomy.com' },
+        { name: 'Soundraw', keywords: ['soundraw','music','audio','compose','ai'], desc: 'AI music generation for creators', link: 'https://soundraw.io' },
+        { name: 'Aiva', keywords: ['aiva','music','compose','ai composer'], desc: 'AI music composer used for soundtracks', link: 'https://www.aiva.ai' },
+        { name: 'Jukebox', keywords: ['jukebox','openai','music','generation','audio'], desc: 'OpenAI research model for music generation', link: 'https://openai.com/research/jukebox' },
+        { name: 'MuseNet', keywords: ['musenet','openai','music','compose','ai'], desc: 'Music generation model by OpenAI', link: 'https://openai.com' },
+        { name: 'Patterned', keywords: ['patterned','music','loops','samples','ai'], desc: 'AI-generated music loops and samples', link: 'https://www.patterned.ai' },
+        { name: 'Beatoven.ai', keywords: ['beatoven','music','ai','composition','background'], desc: 'AI for custom music scoring', link: 'https://www.beatoven.ai' },
+        { name: 'Voicemod', keywords: ['voicemod','voice','real-time','effects','ai'], desc: 'Real-time voice changer with AI', link: 'https://www.voicemod.net' },
+        { name: 'Synthesys', keywords: ['synthesys','voice','tts','ai voice','overdub'], desc: 'AI voice generation platform', link: 'https://synthesys.io' },
+        { name: 'Rephrase.ai', keywords: ['rephrase','video','avatar','personalized','ai video'], desc: 'Personalized video generation with AI', link: 'https://www.rephrase.ai' },
+        { name: 'Riffusion', keywords: ['riffusion','music','ai','riff','sound'], desc: 'Generative music from text prompts', link: 'https://riffusion.com' },
+        { name: 'OpenAI Codex', keywords: ['codex','code','openai','programming','api'], desc: 'Code generation and assistance from OpenAI', link: 'https://openai.com' },
+        { name: 'Scholarcy', keywords: ['scholarcy','summarize','papers','research','academic'], desc: 'Summarize research papers and articles', link: 'https://www.scholarcy.com' },
+        { name: 'DataRobot', keywords: ['datarobot','ml','automl','predictive','models'], desc: 'Enterprise AI and automated machine learning', link: 'https://www.datarobot.com' },
+        { name: 'H2O.ai', keywords: ['h2o','automl','ml','ai','models'], desc: 'Open-source and enterprise ML platform', link: 'https://www.h2o.ai' },
+        { name: 'BigML', keywords: ['bigml','ml','models','automl','ai'], desc: 'Machine learning and predictive modeling', link: 'https://bigml.com' },
+        { name: 'MonkeyLearn', keywords: ['monkeylearn','nlp','classification','text','ai'], desc: 'Text analysis and NLP tools', link: 'https://monkeylearn.com' },
+        { name: 'Clarifai', keywords: ['clarifai','vision','image','recognition','api'], desc: 'Computer vision and image recognition APIs', link: 'https://www.clarifai.com' },
+        { name: 'DeepAI', keywords: ['deepai','image','api','models','vision'], desc: 'APIs for image and text AI', link: 'https://deepai.org' },
+        { name: 'Amazon SageMaker', keywords: ['sagemaker','aws','train','deploy','ml'], desc: 'Build, train, and deploy ML models on AWS', link: 'https://aws.amazon.com/sagemaker' },
+        { name: 'Labelbox', keywords: ['labelbox','annotation','labeling','data','ml'], desc: 'Data labeling and training data platform', link: 'https://labelbox.com' },
+        { name: 'Snorkel AI', keywords: ['snorkel','labeling','weak supervision','data','ml'], desc: 'Programmatic labeling and data-centric AI', link: 'https://snorkel.ai' },
+        { name: 'Lobe', keywords: ['lobe','microsoft','no-code','vision','models'], desc: 'No-code model builder by Microsoft', link: 'https://www.lobe.ai' },
+        { name: 'Neural.love', keywords: ['neural.love','image','enhance','ai','upscale'], desc: 'Image enhancement and upscaling with AI', link: 'https://neural.love' },
+        { name: 'DreamStudio', keywords: ['dreamstudio','stability','image','sd','text-to-image'], desc: 'Official Stability AI image studio', link: 'https://dreamstudio.ai' },
+        { name: 'DiffusionBee', keywords: ['diffusionbee','sd','stable diffusion','local','image'], desc: 'Local Stable Diffusion desktop app', link: 'https://diffusionbee.com' },
+        { name: 'Narrative Science', keywords: ['narrative','quill','nlg','reports','storytelling'], desc: 'Natural language generation for analytics', link: 'https://narrativescience.com' },
+        { name: 'Arria NLG', keywords: ['arria','nlg','nlp','generate','reports'], desc: 'Automated natural language generation', link: 'https://www.arria.com' },
+        { name: 'Peltarion', keywords: ['peltarion','platform','deploy','ai','models'], desc: 'Operational AI platform', link: 'https://peltarion.com' },
+        { name: 'Diffusers (Hugging Face)', keywords: ['diffusers','huggingface','diffusion','image','models'], desc: 'Diffusion model library and tools', link: 'https://huggingface.co/docs/diffusers' },
+        { name: 'Dream by WOMBO', keywords: ['wombo','dream','image','ai','art'], desc: 'Easy text-to-image generation app', link: 'https://www.wombo.art' },
+        { name: 'Socratic', keywords: ['socratic','education','study','help','google'], desc: 'Education assistant to help with homework', link: 'https://socratic.org' },
+        { name: 'Diffblue', keywords: ['diffblue','java','testing','unit tests','code'], desc: 'AI for generating unit tests', link: 'https://www.diffblue.com' },
+        { name: 'Clarify (voice)', keywords: ['clarify','voice','transcribe','ai','calls'], desc: 'Voice analytics and transcription tools', link: 'https://www.clari.com' },
+        { name: 'ManyChat', keywords: ['manychat','chatbot','messaging','funnels','automation'], desc: 'Chatbot builder for marketing and messaging', link: 'https://manychat.com' },
+        { name: 'Chatfuel', keywords: ['chatfuel','chatbot','messenger','bots','automation'], desc: 'No-code chatbot platform', link: 'https://chatfuel.com' },
+        { name: 'Landbot', keywords: ['landbot','conversational','chatbot','no-code','web'], desc: 'Conversational landing pages and chatbots', link: 'https://landbot.io' },
+        { name: 'Poe (Quora)', keywords: ['poe','quora','chat','assistant','multi'], desc: 'Multi-model chat interface by Quora', link: 'https://poe.com' },
+        { name: 'Cogram', keywords: ['cogram','sql','analysis','notebooks','ai'], desc: 'AI assistant for data scientists and SQL', link: 'https://www.cogram.com' },
+        { name: 'Firefly (Adobe)', keywords: ['firefly','adobe','image','creative','design'], desc: 'Adobe Firefly creative AI tools', link: 'https://www.adobe.com/sensei.html' },
+        { name: 'AlphaFold (DeepMind)', keywords: ['alphafold','biology','protein','structure','molecular','genomics'], desc: 'AI system for predicting 3D protein structures and advancing biology', link: 'https://deepmind.google/discover/blog/alphafold-a-solution-to-a-50-year-old-grand-challenge-in-biology/' },
+        { name: 'AlphaGeometry (DeepMind)', keywords: ['alphageometry','math','geometry','problem-solver','reasoning'], desc: 'AI system for solving complex geometry problems with human-like deduction', link: 'https://deepmind.google/discover/blog/alphageometry-an-ai-system-that-solves-geometry-problems/' },
+        { name: 'ChemLex', keywords: ['chemlex','chemistry','molecular','synthesis','discovery','research'], desc: 'AI platform for automating chemical structure generation and analysis', link: 'https://chemlex.com' },
+        { name: 'Undermind', keywords: ['undermind','research','academic','physics','chemistry','biology','summarize'], desc: 'AI assistant to condense scientific literature and find insights (cross-disciplinary)', link: 'https://www.undermind.ai/' },
+        { name: 'MathGPT', keywords: ['mathgpt','math','tutor','homework','calculator','algebra','calculus'], desc: 'AI math solver and tutor for step-by-step solutions and video explanations', link: 'https://math-gpt.org/' },
+        { name: 'Symbolab', keywords: ['symbolab','math','solver','calculator','algebra','calculus','trigonometry'], desc: 'Advanced math solver and calculator with step-by-step solutions', link: 'https://www.symbolab.com/' },
+        { name: 'Wolfram Alpha', keywords: ['wolfram alpha','math','computation','science','data','knowledge engine','calculus'], desc: 'Computational knowledge engine for math, science, and technical data', link: 'https://www.wolframalpha.com/' },
+        { name: 'Mindjoy (Biology)', keywords: ['mindjoy','biology','education','learning','k-12','models','visualization'], desc: 'AI-powered platform for K-12 biology learning with interactive models', link: 'https://www.mindjoy.com/k12/biology' },
+        { name: 'HyperWrite (Biology)', keywords: ['hyperwrite','biology','education','learning','assistant','explain'], desc: 'Personal AI learning assistant for detailed biology term explanations', link: 'https://www.hyperwriteai.com/aitools/ai-biology-learning-assistant' },
+        { name: 'HyperWrite (Debate)', keywords: ['hyperwrite','debate','argument','rebuttal','essay','persuasive'], desc: 'AI Debate Assistant for generating well-structured arguments for and against a topic', link: 'https://www.hyperwriteai.com/aitools/debate-assistant' },
+        { name: 'iWeaver AI Argument Generator', keywords: ['iweaver','debate','argument','persuasive','rebuttal','legal'], desc: 'Quickly generates arguments, counterarguments, and rebuttals for debates and essays', link: 'https://www.iweaver.ai/agents/ai-argument-generator/' },
+        { name: 'AI Debater (DeepAI)', keywords: ['deepai','debate','chatbot','roleplay','argument'], desc: 'Intelligent debate chatbot to practice argumentation skills on various topics', link: 'https://deepai.org/chat/debate' },
+        { name: 'Yoodli', keywords: ['yoodli','speech','debate','presentation','feedback','public speaking'], desc: 'AI coach for public speaking, providing real-time feedback on tone and delivery', link: 'https://www.yoodli.ai' },
+        { name: 'Consensus', keywords: ['consensus','research','debate','evidence','claim','verify'], desc: 'Searches peer-reviewed papers to support, oppose, or complicate a claim with evidence', link: 'https://consensus.app/' },
+        { name: 'Mathway', keywords: ['math','algebra','trigonometry','calculus','physics', 'geometry', 'calculator', 'homework', 'mathway'], desc: 'Free and fast help with math and physics homework', link: 'https://mathway.com' },
+    ];
+
+    // Replace backend classify: match against AI_DB using keywords
+    function findAIMatches(query) {
+        const q = query.toLowerCase();
+        const tokens = q.split(/\W+/).filter(Boolean);
+
+        // Score each AI by number of matching keywords
+        const scored = AI_DB.map(ai => {
+            let score = 0;
+            for (const kw of ai.keywords) {
+                const k = kw.toLowerCase();
+                if (tokens.includes(k)) score += 2; // exact token match
+                else if (q.includes(k)) score += 1; // substring match
+            }
+            return { ai, score };
+        });
+
+        // Keep only positive scores, sort by score desc
+        const matches = scored.filter(s => s.score > 0).sort((a,b) => b.score - a.score).map(s => s.ai);
+
+        // If no keyword matches, try fuzzy: return popular ones by category heuristics
+        if (matches.length === 0) {
+            // simple heuristics: if query mentions 'image' or 'picture' return image AIs
+            if (q.includes('image') || q.includes('picture') || q.includes('art')) {
+                return AI_DB.filter(a => a.keywords.some(k => k.includes('image') || k.includes('art'))).slice(0, 10);
+            }
+            if (q.includes('video') || q.includes('movie')) {
+                return AI_DB.filter(a => a.keywords.some(k => k.includes('video'))).slice(0, 10);
+            }
+            if (q.includes('audio') || q.includes('voice') || q.includes('tts')) {
+                return AI_DB.filter(a => a.keywords.some(k => k.includes('voice') || k.includes('audio') || k.includes('tts'))).slice(0, 10);
+            }
+            if (q.includes('code') || q.includes('program') || q.includes('developer')) {
+                return AI_DB.filter(a => a.keywords.some(k => k.includes('code') || k.includes('copilot') || k.includes('program'))).slice(0, 10);
+            }
+            // fallback: return ChatGPT & Google Gemini when no specific keyword match
+            const fallback = AI_DB.filter(a => a.name === 'ChatGPT' || a.name === 'Google Gemini');
+            if (fallback.length) return fallback;
+            return AI_DB.slice(0, 2);
+        }
+
+        return matches.slice(0, 12);
+    }
+
+    function renderAIs(aiList) {
+        if (!aiList || aiList.length === 0) {
+            resultBox.innerHTML = '<span class="error-text">❌ No AI match found. Try different keywords like "image", "code", "video", "voice", or "writing".</span>';
+            return;
+        }
+
+        function summaryText(text) {
+            if (!text) return '';
+            // split into sentences and take first 2 sentences
+            const parts = text.split(/(?<=[.!?])\s+/).filter(Boolean);
+            if (parts.length === 0) return text;
+            const take = parts.slice(0, 2).join(' ');
+            if (take.length > 220) return take.slice(0, 217) + '...';
+            return take;
+        }
+
+        let html = '<div class="result-text">🔎 Matches:</div>';
+        html += '<div style="display:flex;flex-direction:column;gap:12px;margin-top:10px">';
+        const showKeywords = (document.getElementById('showKeywordsToggle') ? document.getElementById('showKeywordsToggle').checked : true);
+        for (const ai of aiList) {
+            const kws = (ai.keywords || []).slice(0,6).map(k => `<span style="background:#eef2ff;color:#334155;padding:6px 10px;border-radius:999px;font-size:12px;margin-right:6px;display:inline-block">${k}</span>`).join('');
+            const summary = summaryText(ai.desc);
+            const kwHTML = showKeywords ? `\n                    <div style="color:#333;margin-top:10px;font-size:12px;font-weight:600">Keywords</div>\n                    <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:8px">${kws}</div>` : '';
+            html += `
+                <div style="background:white;padding:14px;border-radius:12px;border:1px solid #eef2ff;display:flex;flex-direction:column">
+                    <div style="display:flex;justify-content:space-between;align-items:center">
+                        <div style="font-weight:700;color:#111;font-size:15px">${ai.name}</div>
+                        <a class="ai-link" href="${ai.link}" target="_blank" rel="noreferrer">Visit</a>
+                    </div>
+                    <div style="color:#333;margin-top:8px;font-size:13px;font-weight:600">Main features</div>
+                    <div style="color:#555;margin-top:6px;font-size:13px">${summary}</div>${kwHTML}
+                </div>
+            `;
+        }
+        html += '</div>';
+        resultBox.innerHTML = html;
+    }
+
+    searchBtn.addEventListener("click", () => {
+        const query = searchInput.value.trim();
+        if (!query) {
+            resultBox.style.display = "block";
+            resultBox.innerHTML = '<span class="error-text">⚠️ Please type something!</span>';
+            return;
+        }
+
+        resultBox.style.display = "block";
+        // Show a matching indicator with animated dots while we 'match' for 3-6 seconds
+        resultBox.innerHTML = '<span class="loading-spinner"></span><span class="result-text" id="matchingText">Matching</span>';
+
+        const matchingEl = document.getElementById('matchingText');
+        let dots = 0;
+        const dotInterval = setInterval(() => {
+            dots = (dots + 1) % 4; // 0..3
+            if (matchingEl) matchingEl.textContent = 'Matching' + '.'.repeat(dots);
+        }, 500);
+
+        // randomized delay between 2000ms and 5000ms
+        const delay = 2000 + Math.floor(Math.random() * 3000);
+
+        setTimeout(() => {
+            clearInterval(dotInterval);
+            // ensure final text before showing results
+            if (matchingEl) matchingEl.textContent = 'Matching...';
+
+            const matches = findAIMatches(query);
+            renderAIs(matches);
+        }, delay);
+    });
+
+    // ===== AI List / Pagination =====
+    const aiListScroll = document.getElementById('aiListScroll');
+    const paginationContainer = document.getElementById('paginationContainer');
+    const pageSizeSelect = document.getElementById('pageSizeSelect');
+    const aiListCount = document.getElementById('aiListCount');
+    const aiListSearch = document.getElementById('aiListSearch');
+
+    // filtered list (searchable)
+    let filteredAI_DB = AI_DB.slice();
+    let currentPage = 1;
+
+    function applyFilter(q) {
+        const t = (q || '').toLowerCase().trim();
+        if (!t) {
+            filteredAI_DB = AI_DB.slice();
+            return;
+        }
+        filteredAI_DB = AI_DB.filter(ai => {
+            const name = (ai.name || '').toLowerCase();
+            const desc = (ai.desc || '').toLowerCase();
+            const kws = (ai.keywords || []).join(' ').toLowerCase();
+            return name.includes(t) || desc.includes(t) || kws.includes(t);
+        });
+    }
+
+    function renderAIListPage(page = 1) {
+        const pageSize = parseInt(pageSizeSelect.value || '5', 10);
+        const total = filteredAI_DB.length;
+        const totalPages = Math.max(1, Math.ceil(total / pageSize));
+        currentPage = Math.min(Math.max(1, page), totalPages);
+        const start = (currentPage - 1) * pageSize;
+        const end = start + pageSize;
+        const slice = filteredAI_DB.slice(start, end);
+
+        aiListCount.textContent = `${total} tools — page ${currentPage}/${totalPages}`;
+
+        let html = '';
+        function summaryText(text) {
+            if (!text) return '';
+            const parts = text.split(/(?<=[.!?])\s+/).filter(Boolean);
+            const take = parts.slice(0, 2).join(' ');
+            if (take.length > 220) return take.slice(0, 217) + '...';
+            return take;
+        }
+
+        const showKeywords = (document.getElementById('showKeywordsToggle') ? document.getElementById('showKeywordsToggle').checked : true);
+        for (const ai of slice) {
+            const kws = (ai.keywords || []).slice(0,8).map(k => `<span class="ai-key">${k}</span>`).join('');
+            const summary = summaryText(ai.desc);
+            const kwHTML = showKeywords ? `\n                    <div style="color:#333;margin-top:10px;font-size:12px;font-weight:600">Keywords</div>\n                    <div class="ai-card-keywords">${kws}</div>` : '';
+            html += `
+                <div class="ai-card">
+                    <div class="ai-card-row">
+                        <div class="ai-card-title">${ai.name}</div>
+                        <a class="ai-link" href="${ai.link}" target="_blank" rel="noreferrer">Visit</a>
+                    </div>
+                    <div style="color:#333;margin-top:8px;font-size:13px;font-weight:600">Main features</div>
+                    <div class="ai-card-desc">${summary}</div>${kwHTML}
+                </div>
+            `;
+        }
+        aiListScroll.innerHTML = html;
+        // animate cards with a slight stagger for smoothness
+        const cards = aiListScroll.querySelectorAll('.ai-card');
+        cards.forEach((c, i) => {
+            // ensure base styles
+            c.classList.remove('entered');
+            c.style.transition = '';
+            // stagger
+            setTimeout(() => {
+                c.classList.add('entered');
+                c.style.transition = 'opacity 320ms cubic-bezier(.2,.9,.2,1), transform 320ms cubic-bezier(.2,.9,.2,1)';
+            }, 60 + i * 60);
+        });
+
+        // pagination
+        const pagesToShow = 7;
+        let pagHTML = '';
+        if (currentPage > 1) pagHTML += `<button class="page-btn" data-page="${currentPage-1}">Prev</button>`;
+
+        for (let p = 1; p <= totalPages; p++) {
+            if (totalPages > pagesToShow) {
+                const left = Math.max(1, currentPage - 3);
+                const right = Math.min(totalPages, currentPage + 3);
+                if (p !== 1 && p !== totalPages && (p < left || p > right)) {
+                    if (p === 2 && left > 2) pagHTML += `<span style="padding:6px 10px;color:#9ca3af">...</span>`;
+                    continue;
+                }
+            }
+            const active = p === currentPage ? 'active' : '';
+            pagHTML += `<button class="page-btn ${active}" data-page="${p}">${p}</button>`;
+        }
+
+        if (currentPage < totalPages) pagHTML += `<button class="page-btn" data-page="${currentPage+1}">Next</button>`;
+        paginationContainer.innerHTML = pagHTML;
+
+        paginationContainer.querySelectorAll('.page-btn').forEach(b => {
+            b.addEventListener('click', () => {
+                const p = parseInt(b.getAttribute('data-page'), 10);
+                renderAIListPage(p);
+                if (aiListScroll && aiListScroll.scrollIntoView) {
+                    aiListScroll.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        });
+    }
+
+    pageSizeSelect.addEventListener('change', () => renderAIListPage(1));
+
+    // debounce helper
+    function debounce(fn, wait) {
+        let t = null;
+        return (...args) => {
+            clearTimeout(t);
+            t = setTimeout(() => fn(...args), wait);
+        };
+    }
+
+    const onSearch = debounce((val) => {
+        applyFilter(val);
+        renderAIListPage(1);
+    }, 250);
+
+    if (aiListSearch) {
+        aiListSearch.addEventListener('input', (e) => onSearch(e.target.value));
+    }
+    const showKeywordsToggle = document.getElementById('showKeywordsToggle');
+    if (showKeywordsToggle) {
+        showKeywordsToggle.addEventListener('change', () => renderAIListPage(1));
+    }
+
+    const aiListTabBtn = document.querySelector('[data-tab="ai-list"]');
+    if (aiListTabBtn) {
+        aiListTabBtn.addEventListener('click', () => setTimeout(() => {
+            renderAIListPage(1);
+            if (aiListScroll && aiListScroll.scrollIntoView) aiListScroll.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 60));
+    }
+
+    // Initial filter/render
+    applyFilter('');
+    if (document.getElementById('aiListScroll')) {
+        renderAIListPage(1);
+    }
+</script>
+
+</body>
+</html>
